@@ -13,9 +13,9 @@ build/
 .DS_Store
 
 # Project specific
-data/
-output/
-results/
-*.pt
-*.bin
+# data/
+# output/
+# results/
+# *.pt
+# *.bin
 *.log
