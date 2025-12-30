@@ -237,7 +237,7 @@ python -m pipeline.run_pipeline input.jpg output/ --no-detection
 python -m pipeline.run_pipeline video.mp4 output.mp4 --skip-frames 2
 ```
 
-## 🏋 Training Your Own Models
+## Training Your Own Models
 
 ### U-Net Enhancement
 
@@ -421,5 +421,5 @@ All right Reserved
 
 ## Contributing
 
-No this is a hobby project pls don't consider i would not continuing maintaining this project
+No this is a hobby project pls don't consider i would not continue maintaining this project
 in whatsoever manner
