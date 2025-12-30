@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a192f;
+  --foreground: #e6f1ff;
+  --ocean-primary: #64ffda;
+  --ocean-secondary: #0077b6;
+  --ocean-accent: #f06292;
+  --glass: rgba(16, 20, 35, 0.7);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ocean-primary: var(--ocean-primary);
+  --color-ocean-secondary: var(--ocean-secondary);
+  --color-ocean-accent: var(--ocean-accent);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
+}
+
+@layer utilities {
+  .glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(100, 255, 218, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+}

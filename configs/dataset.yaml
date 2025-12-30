@@ -1,0 +1,41 @@
+# Underwater Marine Life Detection Dataset Configuration
+# For use with YOLOv5/YOLOv8
+
+# Dataset paths
+path: /Users/rilso/Downloads/pvac_hfhe_cpp-main 2/shamilproject/underwater-ai/data/detection
+train: images/train
+val: images/val
+test: images/val # Can use same as val or create separate test set
+
+# Number of classes
+nc: 7
+
+# Class names
+names:
+  0: fish
+  1: jellyfish
+  2: penguin
+  3: puffin
+  4: shark
+  5: starfish
+  6: stingray
+# Additional settings for underwater images
+# These affect augmentation and training behavior
+
+# Augmentation settings (optional, uncomment to customize)
+# hsv_h: 0.015  # Hue augmentation (underwater has specific color range)
+# hsv_s: 0.7    # Saturation augmentation
+# hsv_v: 0.4    # Value augmentation
+# flipud: 0.0   # Vertical flip (may not make sense for marine life)
+# fliplr: 0.5   # Horizontal flip
+# mosaic: 1.0   # Mosaic augmentation
+# mixup: 0.0    # Mixup augmentation
+
+# Class-specific notes:
+# - fish: General category for various fish species
+# - shark: All shark species
+# - jellyfish: Jellyfish and related species
+# - starfish: Starfish, sea stars, and urchins
+# - coral: Healthy coral formations
+# - diseased: Diseased or bleached coral/organisms
+# - damaged: Physical damage to marine environment
