@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Head from "next/head";
-import { Upload, Camera, Waves, Shield, ArrowRight, CheckCircle2, Loader2, Maximize2, RefreshCcw } from "lucide-react";
+import { Upload, Camera, Waves, Shield, ArrowRight, CheckCircle2, Loader2, Maximize2, RefreshCcw, Filter, Fish, Bug, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Detection {
   class_name: string;
   confidence: number;
+  category: string;
   bbox: {
     x1: number;
     y1: number;
@@ -21,7 +22,15 @@ interface ProcessResult {
   annotated_image: string | null;
   detections: Detection[];
   processing_time: number;
+  category_filter: string;
 }
+
+// Category colors and icons
+const CATEGORY_CONFIG: Record<string, { color: string; bgColor: string; icon: React.ReactNode }> = {
+  marine: { color: 'text-cyan-400', bgColor: 'bg-cyan-400/20', icon: <Waves size={12} /> },
+  species: { color: 'text-orange-400', bgColor: 'bg-orange-400/20', icon: <Fish size={12} /> },
+  disease: { color: 'text-red-400', bgColor: 'bg-red-400/20', icon: <Bug size={12} /> },
+};
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -29,6 +38,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ProcessResult | null>(null);
   const [showAnnotated, setShowAnnotated] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,9 +59,9 @@ export default function Home() {
     formData.append("enhancement", "combined");
     formData.append("confidence", "0.25");
     formData.append("detection", "true");
+    formData.append("category", categoryFilter);
 
     try {
-      // Assuming FastAPI is running on localhost:8000
       const response = await fetch("http://localhost:8000/process", {
         method: "POST",
         body: formData,
@@ -69,10 +79,18 @@ export default function Home() {
     }
   };
 
+  // Group detections by category
+  const groupedDetections = result?.detections.reduce((acc, det) => {
+    const cat = det.category || 'unknown';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(det);
+    return acc;
+  }, {} as Record<string, Detection[]>) || {};
+
   return (
     <div className="min-h-screen ocean-gradient text-white selection:bg-ocean-primary/30">
       <Head>
-        <title>Underwater Detection</title>
+        <title>Underwater Detection - 23 Classes</title>
       </Head>
 
       {/* Navigation */}
@@ -81,19 +99,16 @@ export default function Home() {
           <div className="bg-ocean-primary p-2 rounded-lg">
             <Waves className="text-[#0a192f]" size={24} />
           </div>
-          <span className="text-2xl font-bold tracking-tighter">Underwater Processing</span>
+          <span className="text-2xl font-bold tracking-tighter">Unified Marine Detector</span>
         </div>
-        <div className="flex gap-6 text-sm font-medium text-white/70">
-          <a href="#" className="hover:text-ocean-primary transition-colors">Platform</a>
-          <a href="#" className="hover:text-ocean-primary transition-colors">Technology</a>
-          <a href="#" className="hover:text-ocean-primary transition-colors">Mission</a>
+        <div className="flex gap-4 text-xs">
+          <span className="px-2 py-1 rounded bg-cyan-400/20 text-cyan-400">7 Marine</span>
+          <span className="px-2 py-1 rounded bg-orange-400/20 text-orange-400">12 Species</span>
+          <span className="px-2 py-1 rounded bg-red-400/20 text-red-400">4 Disease</span>
         </div>
-        <button className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/20 transition-all">
-          Dashboard
-        </button>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-12 items-center">
+      <main className="max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-12 items-start">
         {/* Left Content */}
         <div className="space-y-8">
           <motion.div 
@@ -102,12 +117,48 @@ export default function Home() {
             className="space-y-4"
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-primary/10 border border-ocean-primary/20 text-ocean-primary text-xs font-bold uppercase tracking-widest">
-              <Shield size={14} /> Next-Gen Maritime Intelligence
+              <Shield size={14} /> 23-Class Detection Model
             </div>
-              Underwater Image Enhancement and Marine Life Detection.
-            <p className="text-xl text-white/60 max-w-xl leading-relaxed">
-              Image enhancement and object detection system. Restore clarity to murky waters and identify marine species.
+            <h1 className="text-4xl font-black leading-tight">
+              Unified Marine Life Detection
+            </h1>
+            <p className="text-lg text-white/60 max-w-xl leading-relaxed">
+              Detect marine life, identify fish species, and diagnose fish diseases - all with a single model.
             </p>
+          </motion.div>
+
+          {/* Category Filter */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card p-4 rounded-xl"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Filter size={16} className="text-ocean-primary" />
+              <span className="text-sm font-bold">Detection Category</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { value: 'all', label: 'All Classes', count: 23 },
+                { value: 'marine', label: 'Marine Life', count: 7 },
+                { value: 'species', label: 'Fish Species', count: 12 },
+                { value: 'disease', label: 'Fish Disease', count: 4 },
+              ].map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setCategoryFilter(cat.value)}
+                  className={`p-3 rounded-lg text-xs font-bold transition-all ${
+                    categoryFilter === cat.value
+                      ? 'bg-ocean-primary text-[#0a192f]'
+                      : 'bg-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  <div>{cat.label}</div>
+                  <div className="text-[10px] opacity-70">{cat.count} classes</div>
+                </button>
+              ))}
+            </div>
           </motion.div>
 
           {/* Upload Area */}
@@ -129,7 +180,7 @@ export default function Home() {
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-bold">Drop underwater imagery here</p>
-                  <p className="text-sm text-white/40">Supporting JPG, PNG and RAW formats</p>
+                  <p className="text-sm text-white/40">Supporting JPG, PNG formats</p>
                 </div>
                 <input 
                   type="file" 
@@ -163,17 +214,62 @@ export default function Home() {
                     </>
                   ) : (
                     <>
-                      Execute Pipeline <ArrowRight size={20} />
+                      Detect ({categoryFilter === 'all' ? '23 classes' : categoryFilter}) <ArrowRight size={20} />
                     </>
                   )}
                 </button>
               </div>
             )}
           </motion.div>
+
+          {/* Class Reference */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="glass-card p-4 rounded-xl"
+          >
+            <h3 className="text-sm font-bold mb-3">Detectable Classes</h3>
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Waves size={14} className="text-cyan-400" />
+                  <span className="text-xs font-bold text-cyan-400">Marine Life</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {['fish', 'jellyfish', 'penguin', 'puffin', 'shark', 'starfish', 'stingray'].map(c => (
+                    <span key={c} className="px-2 py-0.5 bg-cyan-400/10 text-cyan-400 rounded text-[10px]">{c}</span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Fish size={14} className="text-orange-400" />
+                  <span className="text-xs font-bold text-orange-400">Fish Species</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {['surgeonfish', 'triggerfish', 'jack', 'spadefish', 'wrasse', 'snapper', 'angelfish', 'damselfish', 'parrotfish', 'tuna', 'grouper', 'moorish_idol'].map(c => (
+                    <span key={c} className="px-2 py-0.5 bg-orange-400/10 text-orange-400 rounded text-[10px]">{c}</span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Bug size={14} className="text-red-400" />
+                  <span className="text-xs font-bold text-red-400">Fish Disease</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {['bacterial_gill_disease', 'bacterial_red_disease', 'bacterial_disease', 'healthy_fish'].map(c => (
+                    <span key={c} className="px-2 py-0.5 bg-red-400/10 text-red-400 rounded text-[10px]">{c}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         {/* Right Results */}
-        <div className="h-full flex flex-col items-center justify-center min-h-[500px]">
+        <div className="h-full flex flex-col items-center justify-start min-h-[500px]">
           <AnimatePresence mode="wait">
             {!result ? (
               <motion.div 
@@ -181,13 +277,13 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center space-y-4 opacity-30 px-12"
+                className="text-center space-y-4 opacity-30 px-12 mt-20"
               >
                 <div className="w-32 h-32 border-4 border-ocean-primary/20 rounded-full mx-auto flex items-center justify-center">
                   <Camera size={48} />
                 </div>
                 <p className="text-lg font-medium">System Ready</p>
-                <p className="text-sm">Inference models loaded on CPU.</p>
+                <p className="text-sm">Unified model loaded with 23 classes.</p>
               </motion.div>
             ) : (
               <motion.div 
@@ -212,7 +308,7 @@ export default function Home() {
                     </button>
                   </div>
                   <div className="text-[10px] text-white/40 uppercase tracking-widest font-black">
-                    Processing Latency: {result.processing_time.toFixed(2)}s
+                    {result.processing_time.toFixed(2)}s
                   </div>
                 </div>
 
@@ -222,46 +318,56 @@ export default function Home() {
                     alt="Processed" 
                     className="w-full rounded-xl"
                   />
-                  <div className="absolute top-6 right-6 p-2 bg-black/60 rounded-lg backdrop-blur-md">
-                    <Maximize2 size={16} />
-                  </div>
                 </div>
 
-                {/* Detection Stats */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="glass-card p-4 rounded-xl space-y-1">
-                    <span className="text-[10px] text-white/40 font-bold uppercase">Detected Objects</span>
-                    <div className="text-2xl font-black text-ocean-primary">{result.detections.length}</div>
-                  </div>
-                  <div className="glass-card p-4 rounded-xl space-y-1">
-                    <span className="text-[10px] text-white/40 font-bold uppercase">Average Confidence</span>
-                    <div className="text-2xl font-black text-ocean-accent">
-                      {result.detections.length > 0 
-                        ? `${(result.detections.reduce((acc, d) => acc + d.confidence, 0) / result.detections.length * 100).toFixed(1)}%`
-                        : "N/A"
-                      }
-                    </div>
-                  </div>
+                {/* Detection Stats by Category */}
+                <div className="grid grid-cols-3 gap-3">
+                  {['marine', 'species', 'disease'].map(cat => {
+                    const config = CATEGORY_CONFIG[cat];
+                    const count = groupedDetections[cat]?.length || 0;
+                    return (
+                      <div key={cat} className={`glass-card p-3 rounded-xl ${config.bgColor}`}>
+                        <div className="flex items-center gap-1 mb-1">
+                          {config.icon}
+                          <span className={`text-[10px] font-bold uppercase ${config.color}`}>{cat}</span>
+                        </div>
+                        <div className={`text-2xl font-black ${config.color}`}>{count}</div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* Detection List */}
-                <div className="glass-card p-6 rounded-2xl space-y-4 max-h-[200px] overflow-y-auto custom-scrollbar">
+                {/* Detection List Grouped by Category */}
+                <div className="glass-card p-4 rounded-2xl space-y-4 max-h-[350px] overflow-y-auto custom-scrollbar">
                   <h3 className="text-sm font-bold flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-ocean-primary" /> Detections
+                    <CheckCircle2 size={16} className="text-ocean-primary" /> 
+                    Detections ({result.detections.length})
                   </h3>
-                  <div className="space-y-2">
-                    {result.detections.map((det, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5 hover:border-white/20 transition-all">
-                        <span className="font-bold capitalize">{det.class_name}</span>
-                        <span className="text-ocean-primary font-mono text-sm">{(det.confidence * 100).toFixed(1)}%</span>
+                  
+                  {Object.entries(groupedDetections).map(([category, dets]) => {
+                    const config = CATEGORY_CONFIG[category] || { color: 'text-white', bgColor: 'bg-white/10', icon: null };
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className={`flex items-center gap-2 ${config.color}`}>
+                          {config.icon}
+                          <span className="text-xs font-bold uppercase">{category}</span>
+                          <span className="text-[10px] opacity-60">({dets.length})</span>
+                        </div>
+                        {dets.map((det, idx) => (
+                          <div key={idx} className={`flex justify-between items-center ${config.bgColor} p-3 rounded-lg border border-white/5`}>
+                            <span className="font-bold capitalize text-sm">{det.class_name.replace(/_/g, ' ')}</span>
+                            <span className={`${config.color} font-mono text-sm`}>{(det.confidence * 100).toFixed(1)}%</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    {result.detections.length === 0 && (
-                      <div className="text-white/20 text-center py-4 text-sm italic">
-                        No objects identified.
-                      </div>
-                    )}
-                  </div>
+                    );
+                  })}
+                  
+                  {result.detections.length === 0 && (
+                    <div className="text-white/20 text-center py-4 text-sm italic">
+                      No objects detected.
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -270,15 +376,8 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-20 p-12 border-t border-white/5 text-center text-white/30 text-xs">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <p>© 2024 Marine Analysis Tool. All rights reserved.</p>
-          <div className="flex justify-center gap-8">
-            <a href="#" className="hover:text-ocean-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-ocean-primary transition-colors">Documentation</a>
-            <a href="#" className="hover:text-ocean-primary transition-colors">Settings</a>
-          </div>
-        </div>
+      <footer className="mt-20 p-8 border-t border-white/5 text-center text-white/30 text-xs">
+        <p>Unified Marine Detector - 23 Classes (Marine Life, Fish Species, Fish Disease)</p>
       </footer>
 
       <style jsx global>{`

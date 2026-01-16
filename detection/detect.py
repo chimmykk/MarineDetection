@@ -57,26 +57,20 @@ class MarineDetector:
             iou_threshold: NMS IoU threshold
             device: Inference device ('cpu' or 'cuda:0')
         """
-        try:
-            from ultralytics import YOLO
-        except ImportError:
-            raise ImportError(
-                "ultralytics package required. Install with: pip install ultralytics"
-            )
+        import torch
         
         self.classes = classes or self.DEFAULT_CLASSES
         self.conf_threshold = confidence_threshold
         self.iou_threshold = iou_threshold
         self.device = device
         
-        # Load model
+        # Load model using torch hub (works with YOLOv5 repo trained models)
         if model_path is None:
-            # Use pretrained YOLOv5s (COCO classes)
             print("Loading pretrained YOLOv5s model...")
-            self.model = YOLO('yolov5s.pt')
+            self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=False)
         else:
             print(f"Loading model from {model_path}...")
-            self.model = YOLO(model_path)
+            self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=False)
         
         # Configure model
         self.model.conf = confidence_threshold
@@ -103,21 +97,23 @@ class MarineDetector:
             if image is None:
                 raise ValueError(f"Could not load image: {image}")
         
-        # Run inference
-        results = self.model(image, device=self.device, verbose=False)[0]
+        # Run inference using torch hub model
+        results = self.model(image)
         
-        # Parse detections
+        # Parse detections from pandas dataframe
         detections = []
-        for box in results.boxes:
+        df = results.pandas().xyxy[0]
+        
+        for _, row in df.iterrows():
             detection = {
-                'class_id': int(box.cls.item()),
-                'class_name': results.names[int(box.cls.item())],
-                'confidence': float(box.conf.item()),
+                'class_id': int(row['class']),
+                'class_name': row['name'],
+                'confidence': float(row['confidence']),
                 'bbox': {
-                    'x1': float(box.xyxy[0][0].item()),
-                    'y1': float(box.xyxy[0][1].item()),
-                    'x2': float(box.xyxy[0][2].item()),
-                    'y2': float(box.xyxy[0][3].item()),
+                    'x1': float(row['xmin']),
+                    'y1': float(row['ymin']),
+                    'x2': float(row['xmax']),
+                    'y2': float(row['ymax']),
                 }
             }
             # Add center and dimensions

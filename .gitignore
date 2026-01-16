@@ -19,3 +19,6 @@ build/
 # *.pt
 # *.bin
 *.log
+
+# YOLOv5 cloned repo (has its own git)
+yolov5/
